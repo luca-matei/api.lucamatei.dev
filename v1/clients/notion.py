@@ -38,7 +38,7 @@ def parse_notion_to_markdown(notion_json):
         elif block_type == "paragraph":
             text = parse_rich_text(block["paragraph"]["rich_text"])
             if text:
-                markdown_lines.append(f"{text}\n")
+                markdown_lines.append(f"<Paragraph content=\"{text}\" />\n")
         elif block_type == "code":
             code_content = parse_rich_text(block["code"]["rich_text"])
             language = block["code"]["language"]

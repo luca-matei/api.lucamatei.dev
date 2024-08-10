@@ -12,6 +12,10 @@ from v1.resources.schemas import ResourceTreeResponse
 from v1.resources.models import Resource
 
 
+def sanitize_slug(slug: str):
+    return slug.lower().replace(" ", "-").replace(".", "-").replace("/", "-").strip("-")
+
+
 @dramatiq.actor(queue_name="resources", max_retries=0)
 def refresh_pages():
     child_pages = []
@@ -31,15 +35,17 @@ def refresh_pages():
         child_count = sum(
             1 for block in response.get("results", []) if block["type"] == "child_page"
         )
-        slug = title.lower().replace(" ", "-").replace("/", "-", 1)
-        child = ResourceTreeResponse(**{
-            "id": page["id"],
-            "title": title,
-            "parent_id": parent_id,
-            "child_count": child_count,
-            "slug": slug,
-            "list_order": 0,
-        }).model_dump()
+        slug = sanitize_slug(title)
+        child = ResourceTreeResponse(
+            **{
+                "id": page["id"],
+                "title": title,
+                "parent_id": parent_id,
+                "child_count": child_count,
+                "slug": slug,
+                "list_order": 0,
+            }
+        ).model_dump()
 
         if page["id"] != settings.NOTION_ROOT_PAGE_ID:
             child_pages.append(child)
@@ -51,6 +57,9 @@ def refresh_pages():
             if block["type"] == "child_page":
                 child_id = block["id"]
                 fetch_child_pages(child_id, page_id)  # Recursively fetch sub-pages
+
+    with PostgresSession() as session:
+        session.query(Resource).delete()
 
     fetch_child_pages(settings.NOTION_ROOT_PAGE_ID)
 

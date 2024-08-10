@@ -26,7 +26,7 @@ class UUIDEncoder(json.JSONEncoder):
 
 class CustomEncoder(Encoder):
     def encode(self, data):
-        return json.dumps(data, cls=UUIDEncoder).encode('utf-8')
+        return json.dumps(data, cls=UUIDEncoder).encode("utf-8")
 
     def decode(self, data):
         def uuid_decoder(obj):
@@ -34,4 +34,4 @@ class CustomEncoder(Encoder):
                 return uuid.UUID(obj["__uuid__"])
             return obj
 
-        return json.loads(data.decode('utf-8'), object_hook=uuid_decoder)
+        return json.loads(data.decode("utf-8"), object_hook=uuid_decoder)
